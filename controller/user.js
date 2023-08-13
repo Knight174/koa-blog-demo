@@ -2,8 +2,8 @@ const { exec, escape } = require('../db/mysql');
 const { genPassword } = require('../utils/cryp');
 
 const login = async (username, password) => {
-  const username = escape(username);
-  let password = genPassword(password);
+  username = escape(username);
+  password = genPassword(password);
   password = escape(password);
 
   const sql = `
