@@ -1,18 +1,67 @@
 const router = require('koa-router')();
+const {
+  getList,
+  getDeatail,
+  newBlog,
+  updateBlog,
+  delBlog,
+} = require('../controller/blog');
+const { SuccessModel, ErrorModel } = require('../model/resModel');
 
 router.prefix('/api/blog');
 
-router.get('/', function (ctx, next) {
-  ctx.body = 'this is a blog response!';
+router.get('/list', async function (ctx, next) {
+  let author = ctx.query.author || '';
+  const keyword = ctx.query.keyword || '';
+
+  if (ctx.query.isadmin) {
+    // 管理员界面
+    if (ctx.session.username == null) {
+      console.error('is admin, but no login');
+      // 未登录
+      ctx.body = new ErrorModel('未登录');
+      return;
+    }
+    // 强制查询自己的博客
+    author = ctx.session.username;
+  }
+
+  const listData = await getList(author, keyword);
+  ctx.body = new SuccessModel(listData);
 });
 
-router.get('/list', function (ctx, next) {
-  const { query } = ctx;
-  ctx.body = {
-    errno: 0,
-    query,
-    data: ['博客数据'],
-  };
+router.get('/detail', async function (ctx, next) {
+  const data = await getDeatail(ctx.query.id);
+  ctx.body = new SuccessModel(data);
+});
+
+router.post('/new', async function (ctx, next) {
+  const body = ctx.request.body;
+  body.author = ctx.session.username;
+  const data = await newBlog(body);
+  ctx.body = new SuccessModel(data);
+});
+
+router.post('/update', async function (ctx, next) {
+  const id = ctx.query.id;
+  const body = ctx.request.body;
+  const val = await updateBlog(id, body);
+  if (val) {
+    ctx.body = new SuccessModel();
+  } else {
+    ctx.body = new ErrorModel('更新博客失败');
+  }
+});
+
+router.post('/del', async function (ctx, next) {
+  const author = ctx.session.username;
+  const id = ctx.query.id;
+  const val = await delBlog(id, author);
+  if (val) {
+    ctx.body = new SuccessModel();
+  } else {
+    ctx.body = new ErrorModel('删除博客失败');
+  }
 });
 
 module.exports = router;
